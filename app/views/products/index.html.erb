@@ -1,0 +1,13 @@
+<h1><%= t "hello" %></h1>
+
+<div id="products">
+    <!-- Display a link to the new product form -->
+    <%= link_to "New Product", new_product_path if authenticated? %>
+    <!-- Loop through each product and display its name -->
+    <% @products.each do |product| %>
+    <div>
+        <!-- Use anchor tags to link to the product's show page -->
+        <%= link_to product.name, product %>
+    </div>
+    <% end %>
+</div>

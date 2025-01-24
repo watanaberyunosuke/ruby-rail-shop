@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_01_10_113216) do
+ActiveRecord::Schema[8.0].define(version: 2025_01_24_134957) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -53,6 +53,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_10_113216) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "inventory_count"
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -69,7 +70,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_10_113216) do
     t.string "email"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "unsubscribe_token"
+    t.string "token"
     t.index ["product_id"], name: "index_subscribers_on_product_id"
+    t.index ["unsubscribe_token"], name: "index_subscribers_on_unsubscribe_token"
   end
 
   create_table "users", force: :cascade do |t|

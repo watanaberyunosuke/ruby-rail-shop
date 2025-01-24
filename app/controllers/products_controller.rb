@@ -1,5 +1,4 @@
 class ProductsController < ApplicationController
-
   # Before action let you to extract share code
   # and allow_unauthenticated_access
   allow_unauthenticated_access only: %i[index show]
@@ -34,9 +33,9 @@ class ProductsController < ApplicationController
   def edit
     # @product = Product.find(params[:id])
     # if @product.update(product_params)
-      # redirect_to @product
+    # redirect_to @product
     # else
-      # render :edit, status: :unprocessable_entity
+    # render :edit, status: :unprocessable_entity
     # end
   end
 

@@ -14,6 +14,13 @@ class SubscribersController < ApplicationController
   end
 
   def subscriber_params
-    params.expect(subscriber: [:email])
+    params.expect(subscriber: [ :email ])
+  end
+
+
+  def unsubscribe
+    @subscriber = Subscriber.find_by!(unsubscribe_token: params[:token])
+    @subscriber.destroy!
+    render :unsubscribe
   end
 end

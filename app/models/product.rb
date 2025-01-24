@@ -1,5 +1,4 @@
 class Product < ApplicationRecord
-
   include Notifications
 
   has_many :subscribers, dependent: :destroy

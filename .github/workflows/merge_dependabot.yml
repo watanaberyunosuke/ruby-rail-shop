@@ -2,26 +2,35 @@ name: Auto-Merge Dependabot PRs
 
 on:
   pull_request:
+    branches:
+      - main
     types:
-      - closed
-  workflow_dispatch:
+      - opened
+      - synchronize
 
 jobs:
   auto-merge:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
 
     steps:
-      - name: Check PR Author and Status
-        id: check_dependabot
-        run: |
-          if [[ "${{ github.event.pull_request.user.login }}" != "dependabot[bot]" ]]; then
-            echo "Not a Dependabot PR. Skipping merge."
-            exit 0
-          fi
+      - name: Check PR Mergeability
+        id: check_merge
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: pullRequest } = await github.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+            });
 
-      - name: Auto-Merge PR
-        if: github.event.pull_request.mergeable_state == 'clean'
+            if (pullRequest.mergeable_state !== 'clean') {
+              core.setFailed('PR is not ready to be merged.');
+            }
+
+      - name: Merge PR
+        if: success()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

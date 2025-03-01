@@ -24,20 +24,22 @@ jobs:
               const prNumber = context.payload.pull_request.number;
               let attempt = 0;
               
-              while (attempt < 5) { // Retry up to 5 times
+              while (attempt < 10) { // Increase retries to 10
                 const { data: pullRequest } = await github.rest.pulls.get({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   pull_number: prNumber,
                 });
 
+                console.log(`Attempt ${attempt + 1}: PR mergeable state is '${pullRequest.mergeable_state}'`);
+
                 if (pullRequest.mergeable && pullRequest.mergeable_state === 'clean') {
+                  console.log('PR is mergeable. Proceeding with merge.');
                   return;
                 }
 
-                console.log(`Attempt ${attempt + 1}: PR is not mergeable. Retrying in 5 seconds...`);
                 attempt++;
-                await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+                await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
               }
 
               core.setFailed('PR is not mergeable after multiple attempts.');

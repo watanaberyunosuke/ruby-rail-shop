@@ -11,27 +11,63 @@ on:
 jobs:
   auto-merge:
     runs-on: ubuntu-latest
-    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
 
     steps:
-      - name: Check PR Mergeability
+      - name: Wait for PR Mergeability
         id: check_merge
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { data: pullRequest } = await github.pulls.get({
+            async function waitForMergeability() {
+              const prNumber = context.payload.pull_request.number;
+              let attempt = 0;
+              
+              while (attempt < 5) { // Retry up to 5 times
+                const { data: pullRequest } = await github.rest.pulls.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: prNumber,
+                });
+
+                if (pullRequest.mergeable && pullRequest.mergeable_state === 'clean') {
+                  return;
+                }
+
+                console.log(`Attempt ${attempt + 1}: PR is not mergeable. Retrying in 5 seconds...`);
+                attempt++;
+                await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+              }
+
+              core.setFailed('PR is not mergeable after multiple attempts.');
+            }
+
+            await waitForMergeability();
+
+      - name: Merge PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.pulls.merge({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.payload.pull_request.number,
+              merge_method: 'merge'
             });
 
-            if (pullRequest.mergeable_state !== 'clean') {
-              core.setFailed('PR is not ready to be merged.');
-            }
-
-      - name: Merge PR
+      - name: Delete Branch
         if: success()
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh pr merge ${{ github.event.pull_request.number }} --merge --delete-branch
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            if (pr.head.ref !== 'main') {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `heads/${pr.head.ref}`
+              });
+            }
